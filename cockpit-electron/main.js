@@ -98,13 +98,28 @@ ipcMain.handle('get-hardware-stats', async () => {
         // Get CPU temperature using advanced methods
         const cpuTemp = await hardwareCollector.getCpuTemperature(platform);
 
-        // Process disk information
+        // Get enhanced disk info with percentage on Windows
         let diskStats = [];
-        if (fsSize && fsSize.length > 0) {
+        if (platform === 'win32') {
+            const diskUsageData = await hardwareCollector.getDiskUsagePercentageWindows();
+            if (diskUsageData && Array.isArray(diskUsageData)) {
+                diskStats = diskUsageData.map(disk => ({
+                    device: disk.drive,
+                    mount: disk.drive,
+                    size: disk.totalGB,
+                    used: disk.usedGB,
+                    available: disk.freeGB,
+                    use: disk.percentageUsed
+                }));
+            }
+        }
+        
+        // Fallback to systeminformation if Windows method didn't work
+        if (diskStats.length === 0 && fsSize && fsSize.length > 0) {
             diskStats = fsSize.map((disk) => ({
                 device: disk.fs || 'Unknown',
                 mount: disk.mount || '/',
-                size: Math.round(disk.size / (1024 ** 3)) || 0, // Convert to GB
+                size: Math.round(disk.size / (1024 ** 3)) || 0,
                 used: Math.round(disk.used / (1024 ** 3)) || 0,
                 available: Math.round(disk.available / (1024 ** 3)) || 0,
                 use: Math.round(disk.use) || 0
@@ -117,7 +132,7 @@ ipcMain.handle('get-hardware-stats', async () => {
         const freeMemGB = Math.round(mem.free / (1024 ** 3));
         const memUsagePercent = totalMemGB > 0 ? Math.round((mem.used / mem.total) * 100) : 0;
 
-        // Process GPU information - with platform-specific enhancements
+        // Process GPU information - with Windows-specific enhancements
         let gpuControllers = [];
         if (graphics.controllers && graphics.controllers.length > 0) {
             gpuControllers = graphics.controllers.map(ctrl => ({
@@ -127,12 +142,14 @@ ipcMain.handle('get-hardware-stats', async () => {
                 utilizationMemory: ctrl.utilizationMemory || 0,
                 temperatureGpu: ctrl.temperatureGpu || 0
             }));
-        } else if (platform === 'win32') {
-            // Try enhanced GPU info for Windows
+        }
+        
+        // Enhanced GPU info for Windows - native detection
+        if (platform === 'win32') {
             try {
-                const gpuInfo = await hardwareCollector.getGpuInfoWindows();
-                if (gpuInfo && gpuInfo.name !== 'Unknown GPU') {
-                    gpuControllers = [gpuInfo];
+                const gpuInfoArray = await hardwareCollector.getGpuInfoWindows();
+                if (Array.isArray(gpuInfoArray) && gpuInfoArray.length > 0) {
+                    gpuControllers = gpuInfoArray;
                 }
             } catch (e) {
                 console.warn("Enhanced GPU detection failed:", e.message);
