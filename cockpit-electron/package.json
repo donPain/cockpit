@@ -5,6 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "test-hardware": "node test-hardware-complete.js",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win",
     "dist:mac": "electron-builder --mac"
@@ -39,10 +40,13 @@
   "author": "Cockpit Team",
   "license": "ISC",
   "dependencies": {
-    "systeminformation": "^5.21.22"
+    "electron-edge-js": "^39.0.1",
+    "os-utils": "^0.0.14",
+    "systeminformation": "^5.21.22",
+    "wmic": "^1.1.1"
   },
   "devDependencies": {
-    "electron": "^28.1.0",
-    "electron-builder": "^24.9.1"
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.4"
   }
 }

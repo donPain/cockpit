@@ -7,6 +7,7 @@ const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
 const os = require('os');
+const si = require('systeminformation');
 
 /**
  * Get CPU temperature - with multiple fallback strategies
@@ -326,14 +327,83 @@ async function getDiskUsagePercentageWindows() {
     }
 }
 
+const path = require('path');
+const fs = require('fs');
+
+async function getHardwareStatsCSharp() {
+    const possiblePaths = [
+        path.join(__dirname, '../HardwareMonitorLib/bin/Release/net6.0/HardwareMonitorLib.exe'),
+        path.join(__dirname, '../HardwareMonitorLib/bin/Debug/net6.0/HardwareMonitorLib.exe'),
+        path.join(__dirname, 'resources/HardwareMonitorLib.exe'),
+        path.join(process.resourcesPath || '', 'HardwareMonitorLib.exe')
+    ];
+
+    let exePath = possiblePaths.find(p => fs.existsSync(p));
+    
+    if (exePath) {
+        try {
+            const { stdout } = await execPromise(`"${exePath}" --json`, { timeout: 10000 });
+            if (stdout && stdout.trim()) {
+                return JSON.parse(stdout.trim());
+            }
+        } catch (e) {
+            console.warn("CSharp hardware monitor failed, falling back to specific methods", e.message);
+        }
+    }
+    return null;
+}
+
+/**
+ * Get Disk Layout (NVMe, SSD, HDD info)
+ */
+async function getDiskLayout() {
+    try {
+        return await si.diskLayout();
+    } catch (error) {
+        console.error("Error getting disk layout:", error);
+        return [];
+    }
+}
+
+/**
+ * Get File System Info (Usage, Size)
+ */
+async function getFileSystemInfo() {
+    try {
+        return await si.fsSize();
+    } catch (error) {
+        console.error("Error getting file system info:", error);
+        return [];
+    }
+}
+
 /**
  * Get Storage Info Advanced
+ * Combines physical layout and logical usage info
  */
 async function getStorageInfoAdvanced(platform) {
-    if (platform === 'win32') {
-        return getDiskUsagePercentageWindows();
+    try {
+        const [layout, fsSize] = await Promise.all([
+            getDiskLayout(),
+            getFileSystemInfo()
+        ]);
+        
+        return {
+            physical: layout,
+            logical: fsSize
+        };
+    } catch (e) {
+        console.warn("Advanced storage info collection failed:", e);
+        // Fallback for Windows if SI fails
+        if (platform === 'win32') {
+            const winDisks = await getDiskUsagePercentageWindows();
+            return {
+                physical: [],
+                logical: winDisks || []
+            };
+        }
+        return { physical: [], logical: [] };
     }
-    return [];
 }
 
 /**
@@ -346,5 +416,8 @@ module.exports = {
     getLinuxTemperature,
     getGpuInfoWindows,
     getDiskUsagePercentageWindows,
-    getStorageInfoAdvanced
+    getStorageInfoAdvanced,
+    getHardwareStatsCSharp,
+    getDiskLayout,
+    getFileSystemInfo
 };

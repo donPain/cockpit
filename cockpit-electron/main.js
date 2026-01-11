@@ -8,15 +8,22 @@ const hardwareCollector = require('./hardware-collector');
 
 const userDataPath = app.getPath('userData');
 const shortcutsPath = path.join(userDataPath, 'shortcuts.json');
+const toolsPath = path.join(userDataPath, 'tools.json');
 
 // Default Profiles (moved to initial config generation)
 const DEFAULT_SHORTCUTS = [
-    { id: 'stg-br', name: 'STG - BR', desc: 'Brasil', icon: '🛡️', type: 'chrome', value: 'Profile 5' },
+    { id: 'stg-br', name: 'STG - BR', desc: 'Brasil', icon: 'https://stg-outdoor.com/img/stg-logo-branco.png', type: 'chrome', value: 'Profile 5' },
     { id: 'sandro', name: 'SANDRO', desc: 'Master', icon: '👑', type: 'chrome', value: 'Default' },
-    { id: 'propoint', name: 'PROPOINT', desc: 'Treinamento', icon: '🎯', type: 'chrome', value: 'Profile 1' },
-    { id: 'ludus', name: 'LUDUS', desc: 'Security', icon: '🔒', type: 'chrome', value: 'Profile 2' },
-    { id: 'strike', name: 'STRIKE', desc: 'Coded', icon: '💻', type: 'chrome', value: 'Profile 6' },
-    { id: 'stg-us', name: 'STG - US', desc: 'United States', icon: '🚀', type: 'chrome', value: 'Profile 4' }
+    { id: 'propoint', name: 'PROPOINT', desc: 'Treinamento', icon: 'https://www.propoint.com.br/logo_propoint.png', type: 'chrome', value: 'Profile 1' },
+    { id: 'ludus', name: 'LUDUS', desc: 'Security', icon: 'https://ludus.vision/logoludus600x175.png', type: 'chrome', value: 'Profile 2' },
+    { id: 'strike', name: 'STRIKE', desc: 'Coded', icon: 'https://www.scb.center/_next/image?url=%2Flogo3.png&w=640&q=75', type: 'chrome', value: 'Profile 6' },
+    { id: 'stg-us', name: 'STG - US', desc: 'United States', icon: 'https://stg-outdoor.com/img/stg-logo-branco.png', type: 'chrome', value: 'Profile 4' }
+];
+
+const DEFAULT_TOOLS = [
+    { id: 'chatgpt', name: 'ChatGPT', url: 'https://chat.openai.com', icon: 'https://cdn-icons-png.flaticon.com/512/11865/11865338.png', profile: 'Default' },
+    { id: 'gemini', name: 'Gemini', url: 'https://gemini.google.com', icon: 'https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/gemini-color.png', profile: 'Default' },
+    { id: 'claude', name: 'Claude', url: 'https://claude.ai', icon: 'https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/claude-color.png', profile: 'Default' }
 ];
 
 function loadShortcuts() {
@@ -38,10 +45,42 @@ function loadShortcuts() {
 
 function saveShortcuts(shortcuts) {
     try {
+        // Ensure directory exists before saving
+        if (!fs.existsSync(userDataPath)) {
+            fs.mkdirSync(userDataPath, { recursive: true });
+        }
         fs.writeFileSync(shortcutsPath, JSON.stringify(shortcuts, null, 2));
+        console.log("Shortcuts saved to:", shortcutsPath);
         return true;
     } catch (e) {
         console.error("Error saving shortcuts:", e);
+        return false;
+    }
+}
+
+function loadTools() {
+    try {
+        if (!fs.existsSync(toolsPath)) {
+            fs.writeFileSync(toolsPath, JSON.stringify(DEFAULT_TOOLS, null, 2));
+            return DEFAULT_TOOLS;
+        }
+        return JSON.parse(fs.readFileSync(toolsPath, 'utf8'));
+    } catch (e) {
+        console.error("Error loading tools:", e);
+        return DEFAULT_TOOLS;
+    }
+}
+
+function saveTools(tools) {
+    try {
+        if (!fs.existsSync(userDataPath)) {
+            fs.mkdirSync(userDataPath, { recursive: true });
+        }
+        fs.writeFileSync(toolsPath, JSON.stringify(tools, null, 2));
+        console.log("Tools saved to:", toolsPath);
+        return true;
+    } catch (e) {
+        console.error("Error saving tools:", e);
         return false;
     }
 }
@@ -64,6 +103,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+    console.log("Configuration Path:", userDataPath);
     createWindow();
 
     app.on('activate', function () {
@@ -86,17 +126,27 @@ ipcMain.handle('get-hardware-stats', async () => {
             currentLoad,
             fsSize,
             mem,
-            graphics
+            graphics,
+            diskLayout
         ] = await Promise.all([
             si.cpu().catch(() => ({ brand: 'Unknown', cores: os.cpus().length })),
             si.currentLoad().catch(() => ({ currentLoad: 0 })),
             si.fsSize().catch(() => []),
             si.mem().catch(() => ({ total: 0, used: 0, free: 0 })),
-            si.graphics().catch(() => ({ controllers: [] }))
+            si.graphics().catch(() => ({ controllers: [] })),
+            si.diskLayout().catch(() => [])
         ]);
 
         // Get CPU temperature using advanced methods
-        const cpuTemp = await hardwareCollector.getCpuTemperature(platform);
+        let cpuTemp = await hardwareCollector.getCpuTemperature(platform);
+
+        // Try to get enhanced hardware stats from C# monitor (NVMe, GPU Temps, etc.)
+        const csharpStats = await hardwareCollector.getHardwareStatsCSharp();
+        
+        // Override CPU temp if C# monitor has better data
+        if (csharpStats && csharpStats.cpu && csharpStats.cpu.temp > 0) {
+            cpuTemp = csharpStats.cpu.temp;
+        }
 
         // Get enhanced disk info with percentage on Windows
         let diskStats = [];
@@ -147,9 +197,25 @@ ipcMain.handle('get-hardware-stats', async () => {
         // Enhanced GPU info for Windows - native detection
         if (platform === 'win32') {
             try {
-                const gpuInfoArray = await hardwareCollector.getGpuInfoWindows();
-                if (Array.isArray(gpuInfoArray) && gpuInfoArray.length > 0) {
-                    gpuControllers = gpuInfoArray;
+                // First try C# monitor stats as they are most reliable for Temps/Usage
+                if (csharpStats && csharpStats.gpus && csharpStats.gpus.length > 0) {
+                    // Start fresh or merge? Let's use C# data as primary source for GPU if available
+                    gpuControllers = csharpStats.gpus.map(gpu => ({
+                         name: gpu.name,
+                         vram: gpu.memoryTotal ? gpu.memoryTotal * 1024 : 0, // Convert GB back to MB if needed, or keep uniform. keeping consistency with systeminfo might require MB
+                         utilizationGpu: gpu.load,
+                         utilizationMemory: gpu.memoryLoad,
+                         temperatureGpu: gpu.temp,
+                         memoryUsed: gpu.memoryUsed,
+                         memoryTotal: gpu.memoryTotal
+                    }));
+                } 
+                else {
+                    // Fallback to WMI/Powershell
+                    const gpuInfoArray = await hardwareCollector.getGpuInfoWindows();
+                    if (Array.isArray(gpuInfoArray) && gpuInfoArray.length > 0) {
+                        gpuControllers = gpuInfoArray;
+                    }
                 }
             } catch (e) {
                 console.warn("Enhanced GPU detection failed:", e.message);
@@ -162,7 +228,7 @@ ipcMain.handle('get-hardware-stats', async () => {
             cpu: {
                 brand: cpuInfo.brand || 'Unknown',
                 cores: cpuInfo.cores || os.cpus().length,
-                usage: Math.round(currentLoad.currentLoad) || 0,
+                usage: (csharpStats && csharpStats.cpu && csharpStats.cpu.load > 0) ? csharpStats.cpu.load : (Math.round(currentLoad.currentLoad) || 0),
                 temp: cpuTemp
             },
             memory: {
@@ -172,6 +238,7 @@ ipcMain.handle('get-hardware-stats', async () => {
                 usage: memUsagePercent
             },
             disk: diskStats,
+            nvme: (csharpStats && csharpStats.storage) ? csharpStats.storage : (diskLayout || []),
             gpu: {
                 controllers: gpuControllers
             }
@@ -215,6 +282,50 @@ ipcMain.handle('delete-shortcut', (event, id) => {
     return shortcuts;
 });
 
+ipcMain.handle('edit-shortcut', (event, updatedShortcut) => {
+    let shortcuts = loadShortcuts();
+    const index = shortcuts.findIndex(s => s.id === updatedShortcut.id);
+    if (index !== -1) {
+        shortcuts[index] = updatedShortcut;
+        saveShortcuts(shortcuts);
+    }
+    return shortcuts;
+});
+
+// --- Tools Handlers ---
+ipcMain.handle('get-tools', () => {
+    return loadTools();
+});
+
+ipcMain.handle('add-tool', (event, tool) => {
+    const tools = loadTools();
+    tool.id = Date.now().toString();
+    tools.push(tool);
+    saveTools(tools);
+    return tools;
+});
+
+ipcMain.handle('delete-tool', (event, id) => {
+    let tools = loadTools();
+    tools = tools.filter(t => t.id !== id);
+    saveTools(tools);
+    return tools;
+});
+
+ipcMain.handle('edit-tool', (event, updatedTool) => {
+    let tools = loadTools();
+    const index = tools.findIndex(t => t.id === updatedTool.id);
+    if (index !== -1) {
+        tools[index] = updatedTool;
+        saveTools(tools);
+    }
+    return tools;
+});
+
+ipcMain.handle('run-tool', async (event, tool) => {
+    return openChromeProfile(tool.profile, tool.url);
+});
+
 ipcMain.handle('run-shortcut', async (event, shortcut) => {
     if (shortcut.type === 'chrome') {
         // Chrome profiles sempre abrem no Chrome
@@ -253,10 +364,10 @@ ipcMain.handle('open-profile', async (event, profileName) => {
 });
 
 
-function openChromeProfile(profileDir) {
+function openChromeProfile(profileDir, url) {
     const platform = os.platform();
     let command = '';
-    const targetUrl = 'chrome://newtab/';
+    const targetUrl = url || 'chrome://newtab/';
 
     if (platform === 'win32') {
         const suffixes = ['\\Google\\Chrome\\Application\\chrome.exe'];

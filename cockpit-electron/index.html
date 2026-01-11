@@ -396,6 +396,18 @@
             font-size: 48px;
             margin-bottom: 15px;
             filter: drop-shadow(0 0 12px currentColor);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 60px;
+            line-height: 1;
+        }
+
+        .company-icon-img {
+             height: 100%;
+             width: auto;
+             object-fit: contain;
+             filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
         }
 
         .company-name {
@@ -450,13 +462,38 @@
             transition: opacity 0.3s;
             z-index: 10;
         }
+
+        .edit-btn {
+            position: absolute;
+            top: 10px;
+            right: 40px;
+            background: rgba(0, 243, 255, 0.2);
+            color: #fff;
+            border: 1px solid var(--neon-blue);
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 10;
+        }
         
-        .company-btn:hover .delete-btn {
+        .company-btn:hover .delete-btn, .company-btn:hover .edit-btn {
             opacity: 1;
         }
         
         .delete-btn:hover {
             background: var(--neon-red);
+        }
+
+        .edit-btn:hover {
+            background: var(--neon-blue);
+            color: #000;
         }
 
         /* MODAL */
@@ -865,13 +902,6 @@
             </div>
         </header>
 
-        <!-- INFO BOX -->
-        <div class="info-box">
-            <strong>⚙️ APLICAÇÃO NATIVA (Windows / MacOS)</strong><br><br>
-            Sistema rodando localmente via Electron.<br>
-            Abertura de perfis e monitoramento de hardware ativos.
-        </div>
-
         <!-- CLOCK + WEATHER -->
         <div class="glass-card">
             <div class="clock-weather-grid">
@@ -905,6 +935,16 @@
                 🌐 ATALHOS & PERFIS
             </div>
             <div class="companies-grid" id="shortcutsGrid">
+                <!-- Javascript will populate this -->
+            </div>
+        </div>
+
+        <!-- AI TOOLS -->
+        <div class="glass-card">
+            <div class="section-title">
+                🤖 FERRAMENTAS DE IA
+            </div>
+            <div class="companies-grid" id="toolsGrid">
                 <!-- Javascript will populate this -->
             </div>
         </div>
@@ -1035,7 +1075,7 @@
                     </div>
                 </div>
 
-                <!-- COOLERS -->
+                <!-- COOLERS
                 <div class="hw-component" style="grid-column: span 2;">
                     <div class="hw-header">
                         <div class="hw-name">COOLERS</div>
@@ -1061,7 +1101,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> -->
             </div>
         </div>
     </div>
@@ -1082,8 +1122,8 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">Ícone (Emoji)</label>
-                <input type="text" id="new-icon" class="form-input" placeholder="Ex: 🌐" maxlength="2">
+                <label class="form-label">Ícone (Emoji ou URL)</label>
+                <input type="text" id="new-icon" class="form-input" placeholder="Ex: 🌐 ou https://...">
             </div>
 
             <div class="form-group">
@@ -1107,6 +1147,40 @@
         </div>
     </div>
 
+    <!-- ADD TOOL MODAL -->
+    <div class="modal-overlay" id="addToolModal">
+        <div class="modal-content">
+            <h2 class="modal-title">Nova Ferramenta</h2>
+            
+            <div class="form-group">
+                <label class="form-label">Nome</label>
+                <input type="text" id="tool-name" class="form-input" placeholder="Ex: ChatGPT">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Ícone (Emoji ou URL)</label>
+                <input type="text" id="tool-icon" class="form-input" placeholder="Ex: 🤖 ou https://...">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">URL da Ferramenta</label>
+                <input type="text" id="tool-url" class="form-input" placeholder="https://chat.openai.com">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Abrir no Perfil (Chrome)</label>
+                <select id="tool-profile" class="form-select">
+                    <!-- Populated by JS -->
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeToolModal()">Cancelar</button>
+                <button class="modal-btn btn-confirm" onclick="saveTool()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- CPU TEMPERATURE ALERT -->
     <div class="cpu-alert" id="cpuAlert">
         <div class="cpu-alert-icon">🔥</div>
@@ -1123,6 +1197,10 @@
 
     <script>
         let cpuAlertShown = false;
+        let currentShortcuts = [];
+        let currentTools = [];
+        let editingShortcutId = null;
+        let editingToolId = null;
 
         // ============= CLOCK =============
         function updateClock() {
@@ -1230,17 +1308,62 @@
                     diskMetricsDiv.innerHTML = '<div class="metric-row"><span class="metric-label">Sem dados</span></div>';
                 }
                 
-                // NVME 1 e 2 (mantém compatibilidade)
-                if (data.disk.length > 0) {
-                    document.getElementById('nvme1-mem').textContent = data.disk[0].use + '%';
-                    updateMetricClass('nvme1-mem', data.disk[0].use, 80, 95);
+
+                // NVME Logic
+                const nvmeDrives = (data.nvme && Array.isArray(data.nvme)) ? data.nvme : [];
+                
+                // NVME 1
+                const nvme1 = nvmeDrives.length > 0 ? nvmeDrives[0] : null;
+                const disk1 = data.disk && data.disk.length > 0 ? data.disk[0] : null;
+
+                if (nvme1) {
+                     // Try to find temp from C# sensor or SI
+                     let temp = 0;
+                     if (typeof nvme1.temperature === 'number') temp = nvme1.temperature;
+                     else if (nvme1.Sensors) {
+                        const s = nvme1.Sensors.find(x => x.Type === 'Temperature');
+                        if (s) temp = s.Value;
+                     } 
+                     
+                     document.getElementById('nvme1-temp').textContent = (temp > 0 ? temp : '--') + '°C';
+                     updateMetricClass('nvme1-temp', temp, 50, 60);
+
+                     // Name update if element exists (optional, keeping structure simple)
+                     // const label = document.querySelector('#nvme1-mem').parentNode.previousElementSibling.previousElementSibling; 
+                     // if(label && nvme1.name) label.innerText = nvme1.name.substring(0, 10);
+                } else {
+                     document.getElementById('nvme1-temp').textContent = '--°C';
+                }
+
+                if (disk1) {
+                    document.getElementById('nvme1-mem').textContent = disk1.use + '%';
+                    updateMetricClass('nvme1-mem', disk1.use, 80, 95);
+                    document.getElementById('nvme1-activity').textContent = '--%'; // Not easily available without perf counters
                 } else {
                     document.getElementById('nvme1-mem').textContent = '0%';
                 }
-                
-                if (data.disk.length > 1) {
-                    document.getElementById('nvme2-mem').textContent = data.disk[1].use + '%';
-                    updateMetricClass('nvme2-mem', data.disk[1].use, 80, 95);
+
+                // NVME 2
+                const nvme2 = nvmeDrives.length > 1 ? nvmeDrives[1] : null;
+                const disk2 = data.disk && data.disk.length > 1 ? data.disk[1] : null;
+
+                if (nvme2) {
+                     let temp = 0;
+                     if (typeof nvme2.temperature === 'number') temp = nvme2.temperature;
+                     else if (nvme2.Sensors) {
+                        const s = nvme2.Sensors.find(x => x.Type === 'Temperature');
+                        if (s) temp = s.Value;
+                     } 
+
+                     document.getElementById('nvme2-temp').textContent = (temp > 0 ? temp : '--') + '°C';
+                     updateMetricClass('nvme2-temp', temp, 50, 60);
+                } else {
+                     document.getElementById('nvme2-temp').textContent = '--°C';
+                }
+
+                if (disk2) {
+                    document.getElementById('nvme2-mem').textContent = disk2.use + '%';
+                    updateMetricClass('nvme2-mem', disk2.use, 80, 95);
                 } else {
                     document.getElementById('nvme2-mem').textContent = '0%';
                 }
@@ -1260,14 +1383,24 @@
         function showCpuAlert() { document.getElementById('cpuAlert').classList.add('show'); }
         function closeCpuAlert() { document.getElementById('cpuAlert').classList.remove('show'); }
 
+        function renderIcon(icon) {
+            if (!icon) return '❓';
+            // Check if it's a URL (http/https) or Base64 image
+            if (icon.trim().startsWith('http') || icon.trim().startsWith('data:image')) {
+                return `<img src="${icon}" class="company-icon-img" alt="icon">`;
+            }
+            // Otherwise assume text/emoji
+            return icon;
+        }
+
         // ============= SHORTCUTS MANAGER =============
         async function loadShortcuts() {
             const grid = document.getElementById('shortcutsGrid');
             grid.innerHTML = ''; // Clear
 
-            const shortcuts = await window.electronAPI.getShortcuts();
+            currentShortcuts = await window.electronAPI.getShortcuts();
             
-            shortcuts.forEach(s => {
+            currentShortcuts.forEach(s => {
                 const btn = document.createElement('a');
                 btn.className = 'company-btn';
                 btn.href = '#';
@@ -1275,7 +1408,8 @@
                 
                 btn.innerHTML = `
                     <div class="delete-btn" onclick="deleteShortcut(event, '${s.id}')">✕</div>
-                    <div class="company-icon">${s.icon}</div>
+                    <div class="edit-btn" onclick="openEditShortcutModal(event, '${s.id}')">✎</div>
+                    <div class="company-icon">${renderIcon(s.icon)}</div>
                     <div class="company-name">${s.name}</div>
                     <div class="company-desc">${s.desc}</div>
                 `;
@@ -1314,10 +1448,35 @@
             }
 
             const shortcut = { name, desc, icon, type, value };
-            await window.electronAPI.addShortcut(shortcut);
+            
+            if (editingShortcutId) {
+                shortcut.id = editingShortcutId;
+                await window.electronAPI.editShortcut(shortcut);
+                notify('Atalho atualizado!');
+            } else {
+                await window.electronAPI.addShortcut(shortcut);
+                notify('Atalho adicionado!');
+            }
+
             closeModal();
             loadShortcuts();
-            notify('Atalho adicionado!');
+        }
+
+        function openEditShortcutModal(event, id) {
+             event.stopPropagation();
+             const s = currentShortcuts.find(x => x.id === id);
+             if(!s) return;
+             
+             editingShortcutId = id;
+             
+             document.getElementById('new-name').value = s.name;
+             document.getElementById('new-desc').value = s.desc;
+             document.getElementById('new-icon').value = s.icon;
+             document.getElementById('new-type').value = s.type;
+             document.getElementById('new-value').value = s.value;
+
+             document.querySelector('#addModal .modal-title').textContent = 'Editar Atalho';
+             document.getElementById('addModal').classList.add('show');
         }
 
         async function deleteShortcut(event, id) {
@@ -1328,8 +1487,160 @@
             }
         }
 
+        // ============= TOOLS MANAGER =============
+        async function loadTools() {
+            const grid = document.getElementById('toolsGrid');
+            grid.innerHTML = '';
+
+            currentTools = await window.electronAPI.getTools();
+
+            currentTools.forEach(t => {
+                const btn = document.createElement('a');
+                btn.className = 'company-btn';
+                btn.href = '#';
+                btn.onclick = (e) => { e.preventDefault(); runTool(t); };
+                
+                btn.innerHTML = `
+                    <div class="delete-btn" onclick="deleteTool(event, '${t.id}')">✕</div>
+                     <div class="edit-btn" onclick="openEditToolModal(event, '${t.id}')">✎</div>
+                    <div class="company-icon">${renderIcon(t.icon)}</div>
+                    <div class="company-name">${t.name}</div>
+                    <div class="company-desc">${t.profile || 'Default'}</div>
+                `;
+                grid.appendChild(btn);
+            });
+
+             // Add "New Tool" Button
+            const addBtn = document.createElement('a');
+            addBtn.className = 'company-btn add-btn';
+            addBtn.href = '#';
+            addBtn.onclick = (e) => { e.preventDefault(); openToolModal(); };
+            addBtn.innerHTML = `
+                <div class="company-icon" style="margin-bottom: 5px">➕</div>
+                <div class="company-name">NOVA</div>
+            `;
+            grid.appendChild(addBtn);
+        }
+
+        async function runTool(tool) {
+            await window.electronAPI.runTool(tool);
+        }
+
+        async function deleteTool(event, id) {
+            event.stopPropagation();
+            if(confirm("Deseja remover esta ferramenta?")) {
+                await window.electronAPI.deleteTool(id);
+                loadTools();
+            }
+        }
+
+        async function saveTool() {
+            const name = document.getElementById('tool-name').value;
+            const icon = document.getElementById('tool-icon').value || '🤖';
+            const url = document.getElementById('tool-url').value;
+            const profile = document.getElementById('tool-profile').value;
+
+            if (!name || !url) {
+                notify('Preencha Nome e URL!');
+                return;
+            }
+
+            const tool = { name, icon, url, profile };
+            
+            if (editingToolId) {
+                tool.id = editingToolId;
+                await window.electronAPI.editTool(tool);
+                notify('Ferramenta atualizada!');
+            } else {
+                await window.electronAPI.addTool(tool);
+                notify('Ferramenta adicionada!');
+            }
+            
+            closeToolModal();
+            loadTools();
+        }
+
+        function openToolModal() {
+            editingToolId = null;
+            document.querySelector('#addToolModal .modal-title').textContent = 'Nova Ferramenta';
+            
+            document.getElementById('tool-name').value = '';
+            document.getElementById('tool-icon').value = '';
+            document.getElementById('tool-url').value = '';
+            
+            // Populate Dropdown
+            const select = document.getElementById('tool-profile');
+            select.innerHTML = '<option value="Default">Default</option>';
+            
+            // Reuse the shortcuts we might prioritize or fetch again? 
+            // Better fetch to be safe or use currentShortcuts
+            // currentShortcuts is available globally now.
+            if (currentShortcuts.length > 0) {
+                 currentShortcuts.filter(s => s.type === 'chrome').forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.value; 
+                    opt.textContent = s.name;
+                    select.appendChild(opt);
+                });
+            } else {
+                 window.electronAPI.getShortcuts().then(shortcuts => {
+                    shortcuts.filter(s => s.type === 'chrome').forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.value; 
+                        opt.textContent = s.name;
+                        select.appendChild(opt);
+                    });
+                });
+            }
+
+            document.getElementById('addToolModal').classList.add('show');
+        }
+
+        function openEditToolModal(event, id) {
+             event.stopPropagation();
+             const t = currentTools.find(x => x.id === id);
+             if(!t) return;
+             
+             editingToolId = id;
+             
+             document.getElementById('tool-name').value = t.name;
+             document.getElementById('tool-icon').value = t.icon;
+             document.getElementById('tool-url').value = t.url;
+             
+             // Populate Dropdown before setting value
+              const select = document.getElementById('tool-profile');
+              select.innerHTML = '<option value="Default">Default</option>';
+              
+              const populate = (list) => {
+                  list.filter(s => s.type === 'chrome').forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.value; 
+                        opt.textContent = s.name;
+                        if(s.value === t.profile) opt.selected = true;
+                        select.appendChild(opt);
+                  });
+                   // Also set value if default
+                  if(t.profile === 'Default') select.value = 'Default';
+                  else select.value = t.profile;
+              };
+
+              if(currentShortcuts.length > 0) populate(currentShortcuts);
+              else window.electronAPI.getShortcuts().then(populate);
+
+             document.querySelector('#addToolModal .modal-title').textContent = 'Editar Ferramenta';
+             document.getElementById('addToolModal').classList.add('show');
+        }
+
+        function closeToolModal() {
+            document.getElementById('addToolModal').classList.remove('show');
+            editingToolId = null;
+        }
+
         // Modal
         function openModal() {
+            editingShortcutId = null;
+            document.querySelector('#addModal .modal-title').textContent = 'Novo Atalho';
+
             document.getElementById('new-name').value = '';
             document.getElementById('new-desc').value = '';
             document.getElementById('new-icon').value = '';
@@ -1339,6 +1650,7 @@
 
         function closeModal() {
             document.getElementById('addModal').classList.remove('show');
+            editingShortcutId = null;
         }
 
         async function lockWindows() {
@@ -1402,9 +1714,10 @@
         setInterval(updateHardware, 2000);
         
         fetchWeather();
-        setInterval(fetchWeather, 600000);
+        setInterval(fetchWeather, 300000);
 
         loadShortcuts();
+        loadTools();
         setupWebviewListeners();
 
         // Listener para abrir webview quando solicitado do main.js

@@ -8,8 +8,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // New Shortcuts API
     getShortcuts: () => ipcRenderer.invoke('get-shortcuts'),
     addShortcut: (shortcut) => ipcRenderer.invoke('add-shortcut', shortcut),
+    editShortcut: (shortcut) => ipcRenderer.invoke('edit-shortcut', shortcut),
     deleteShortcut: (id) => ipcRenderer.invoke('delete-shortcut', id),
     runShortcut: (shortcut) => ipcRenderer.invoke('run-shortcut', shortcut),
+
+    // Tools API
+    getTools: () => ipcRenderer.invoke('get-tools'),
+    addTool: (tool) => ipcRenderer.invoke('add-tool', tool),
+    editTool: (tool) => ipcRenderer.invoke('edit-tool', tool),
+    deleteTool: (id) => ipcRenderer.invoke('delete-tool', id),
+    runTool: (tool) => ipcRenderer.invoke('run-tool', tool),
     
     // Webview API
     openWebview: (url, title) => {
