@@ -4,6 +4,7 @@ const os = require('os');
 const fs = require('fs');
 const { exec, execSync } = require('child_process');
 const si = require('systeminformation');
+const hardwareCollector = require('./hardware-collector');
 
 const userDataPath = app.getPath('userData');
 const shortcutsPath = path.join(userDataPath, 'shortcuts.json');
@@ -94,27 +95,8 @@ ipcMain.handle('get-hardware-stats', async () => {
             si.graphics().catch(() => ({ controllers: [] }))
         ]);
 
-        // Get CPU temperature with fallback
-        let cpuTemp = 0;
-        try {
-            const tempData = await si.cpuTemperature();
-            cpuTemp = Math.round(tempData.main) || 0;
-        } catch (e) {
-            // Try platform-specific temperature retrieval
-            if (platform === 'darwin') {
-                try {
-                    cpuTemp = await getMacTemperature();
-                } catch (err) {
-                    console.warn("Mac temperature not available:", err.message);
-                }
-            } else if (platform === 'win32') {
-                try {
-                    cpuTemp = await getWindowsTemperature();
-                } catch (err) {
-                    console.warn("Windows temperature not available:", err.message);
-                }
-            }
-        }
+        // Get CPU temperature using advanced methods
+        const cpuTemp = await hardwareCollector.getCpuTemperature(platform);
 
         // Process disk information
         let diskStats = [];
@@ -135,7 +117,7 @@ ipcMain.handle('get-hardware-stats', async () => {
         const freeMemGB = Math.round(mem.free / (1024 ** 3));
         const memUsagePercent = totalMemGB > 0 ? Math.round((mem.used / mem.total) * 100) : 0;
 
-        // Process GPU information
+        // Process GPU information - with platform-specific enhancements
         let gpuControllers = [];
         if (graphics.controllers && graphics.controllers.length > 0) {
             gpuControllers = graphics.controllers.map(ctrl => ({
@@ -145,6 +127,16 @@ ipcMain.handle('get-hardware-stats', async () => {
                 utilizationMemory: ctrl.utilizationMemory || 0,
                 temperatureGpu: ctrl.temperatureGpu || 0
             }));
+        } else if (platform === 'win32') {
+            // Try enhanced GPU info for Windows
+            try {
+                const gpuInfo = await hardwareCollector.getGpuInfoWindows();
+                if (gpuInfo && gpuInfo.name !== 'Unknown GPU') {
+                    gpuControllers = [gpuInfo];
+                }
+            } catch (e) {
+                console.warn("Enhanced GPU detection failed:", e.message);
+            }
         }
 
         const stats = {
@@ -183,53 +175,8 @@ ipcMain.handle('get-hardware-stats', async () => {
     }
 });
 
-// Helper function to get CPU temperature on macOS
-async function getMacTemperature() {
-    return new Promise((resolve, reject) => {
-        try {
-            // Try using powermetrics (requires sudo) - won't work
-            // Try using sysctl for other values
-            exec('sysctl -a | grep temp', (error, stdout) => {
-                if (error) {
-                    // Fallback: use a standard estimation
-                    return resolve(45); // Default safe value
-                }
-                const lines = stdout.split('\n');
-                for (const line of lines) {
-                    if (line.includes('coretemp') || line.includes('thermal')) {
-                        const match = line.match(/(\d+)/);
-                        if (match) {
-                            // Convert from 0.1°C units if needed
-                            const temp = parseInt(match[1]);
-                            if (temp > 10 && temp < 200) return resolve(temp);
-                        }
-                    }
-                }
-                resolve(45); // Default if unable to parse
-            });
-        } catch (e) {
-            resolve(45); // Default safe value
-        }
-    });
-}
-
-// Helper function to get CPU temperature on Windows
-async function getWindowsTemperature() {
-    return new Promise((resolve) => {
-        try {
-            // Windows: Try WMI query
-            const cmd = 'wmic /namespace:\\\\root\\wmi PATH MSAcpi_ThermalZoneTemperature get CurrentTemperature | findstr .';
-            execSync(cmd, { encoding: 'utf8' }, (error, stdout) => {
-                if (error) return resolve(50); // Default safe value
-                const tempInKelvin = parseInt(stdout.trim()) / 10;
-                const tempInCelsius = Math.round(tempInKelvin - 273.15);
-                resolve(Math.max(0, tempInCelsius));
-            });
-        } catch (e) {
-            resolve(50); // Default safe value
-        }
-    });
-}
+// Note: Temperature collection is now handled by hardware-collector.js module
+// The following functions have been moved there for better maintenance and organization
 
 // --- Shortcuts Handlers ---
 ipcMain.handle('get-shortcuts', () => {
@@ -316,7 +263,7 @@ function openChromeProfile(profileDir) {
 }
 
 // --- Lock Handler ---
-icpMain.handle('lock-system', () => {
+ipcMain.handle('lock-system', () => {
     const platform = os.platform();
     if (platform === 'win32') {
         exec('rundll32.exe user32.dll,LockWorkStation');
