@@ -76,7 +76,7 @@
         .container {
             max-width: 1900px;
             margin: 0 auto;
-            padding: 25px;
+            padding: 15px;
             position: relative;
             z-index: 1;
         }
@@ -85,9 +85,9 @@
             background: rgba(15, 25, 45, 0.4);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 20px 35px;
-            margin-bottom: 30px;
+            border-radius: 15px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
             box-shadow: 
                 0 8px 32px rgba(0, 0, 0, 0.4),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -117,14 +117,14 @@
         .logo-section {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 12px;
         }
 
         .logo {
             font-family: 'Orbitron', sans-serif;
-            font-size: 28px;
+            font-size: 22px;
             font-weight: 900;
-            letter-spacing: 4px;
+            letter-spacing: 3px;
             background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -134,12 +134,12 @@
         .status-indicator {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 13px;
+            gap: 8px;
+            font-size: 11px;
             color: var(--neon-green);
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
 
         .status-dot {
@@ -158,27 +158,27 @@
 
         .quick-actions {
             display: flex;
-            gap: 12px;
+            gap: 8px;
         }
 
         .btn-header {
             position: relative;
             background: rgba(0, 243, 255, 0.1);
             border: 2px solid var(--neon-blue);
-            padding: 12px 24px;
-            border-radius: 10px;
+            padding: 8px 16px;
+            border-radius: 8px;
             color: var(--neon-blue);
             font-weight: 700;
-            font-size: 13px;
+            font-size: 11px;
             cursor: pointer;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             transition: all 0.3s ease;
             overflow: hidden;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
         }
 
         .btn-header::before {
@@ -224,14 +224,14 @@
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
-            padding: 30px;
+            padding: 20px;
             box-shadow: 
                 0 8px 32px rgba(0, 0, 0, 0.4),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
             transition: all 0.4s ease;
             position: relative;
             overflow: hidden;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .glass-card::before {
@@ -259,15 +259,50 @@
 
         .section-title {
             font-family: 'Orbitron', sans-serif;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
             color: var(--neon-blue);
             text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-bottom: 25px;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
             gap: 10px;
+        }
+
+        .reload-btn {
+            position: relative;
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid var(--neon-blue);
+            padding: 6px 10px;
+            border-radius: 6px;
+            color: var(--neon-blue);
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: auto;
+        }
+
+        .reload-btn:hover {
+            background: rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+            transform: scale(1.05);
+        }
+
+        .reload-btn.loading {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         /* CLOCK + WEATHER */
@@ -284,36 +319,36 @@
 
         .time-display {
             font-family: 'Orbitron', sans-serif;
-            font-size: 64px;
+            font-size: 48px;
             font-weight: 900;
             background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            letter-spacing: 5px;
-            margin-bottom: 10px;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
             line-height: 1;
         }
 
         .date-display {
-            font-size: 16px;
+            font-size: 12px;
             color: rgba(255, 255, 255, 0.7);
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             font-weight: 600;
         }
 
         .weather-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+            gap: 12px;
         }
 
         .weather-card {
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
+            border-radius: 12px;
+            padding: 12px 10px;
             text-align: center;
             transition: all 0.3s ease;
         }
@@ -325,43 +360,43 @@
         }
 
         .weather-city-name {
-            font-size: 14px;
+            font-size: 11px;
             font-weight: 700;
             color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 12px;
+            margin-bottom: 6px;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
 
         .weather-temperature {
             font-family: 'Orbitron', sans-serif;
-            font-size: 36px;
+            font-size: 28px;
             font-weight: 900;
             color: var(--neon-blue);
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             text-shadow: 0 0 20px var(--neon-blue);
         }
 
         .weather-condition {
-            font-size: 12px;
+            font-size: 10px;
             color: rgba(255, 255, 255, 0.6);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
         /* COMPANY BUTTONS */
         .companies-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
+            gap: 15px;
         }
 
         .company-btn {
             position: relative;
             background: rgba(0, 0, 0, 0.4);
             border: 2px solid var(--neon-blue);
-            border-radius: 18px;
-            padding: 35px 25px;
+            border-radius: 15px;
+            padding: 20px 15px;
             text-align: center;
             cursor: pointer;
             transition: all 0.4s ease;
@@ -393,13 +428,13 @@
         }
 
         .company-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-            filter: drop-shadow(0 0 12px currentColor);
+            font-size: 36px;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 0 10px currentColor);
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 60px;
+            height: 45px;
             line-height: 1;
         }
 
@@ -412,19 +447,19 @@
 
         .company-name {
             font-family: 'Orbitron', sans-serif;
-            font-size: 18px;
+            font-size: 13px;
             font-weight: 900;
             color: var(--neon-blue);
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 5px;
+            letter-spacing: 1px;
+            margin-bottom: 3px;
         }
 
         .company-desc {
-            font-size: 12px;
+            font-size: 10px;
             color: rgba(255, 255, 255, 0.6);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
         
         /* ADD BUTTON STYLE */
@@ -610,8 +645,8 @@
         .hw-component {
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
+            border-radius: 12px;
+            padding: 15px;
             transition: all 0.3s ease;
         }
 
@@ -624,44 +659,44 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .hw-name {
             font-family: 'Orbitron', sans-serif;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 700;
             color: var(--neon-blue);
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
 
         .hw-icon {
-            font-size: 24px;
+            font-size: 20px;
         }
 
         .hw-metrics {
             display: grid;
-            gap: 10px;
+            gap: 6px;
         }
 
         .metric-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
+            padding: 4px 0;
         }
 
         .metric-label {
-            font-size: 13px;
+            font-size: 11px;
             color: rgba(255, 255, 255, 0.6);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
         .metric-value {
             font-family: 'Orbitron', sans-serif;
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 700;
             color: var(--neon-green);
         }
@@ -890,12 +925,12 @@
                 </div>
             </div>
             <div class="quick-actions">
-                <a href="https://calendar.google.com/calendar/u/0/r" class="btn-header" target="_blank" rel="noopener noreferrer">
+                <button onclick="openQuickTool('agenda')" class="btn-header">
                     📅 Agenda
-                </a>
-                <a href="https://meet.google.com/" class="btn-header" target="_blank" rel="noopener noreferrer">
+                </button>
+                <button onclick="openQuickTool('meet')" class="btn-header">
                     📹 Meet
-                </a>
+                </button>
                 <button onclick="lockWindows()" class="btn-header btn-danger">
                     🔒 Lock
                 </button>
@@ -909,15 +944,19 @@
                     <div class="time-display" id="timeDisplay">00:00</div>
                     <div class="date-display" id="dateDisplay">Loading...</div>
                 </div>
-                <div class="weather-container">
-                    <div class="weather-card">
-                        <div class="weather-city-name">BIRIGUI</div>
-                        <div class="weather-temperature" id="temp-birigui">--°</div>
-                        <div class="weather-condition" id="cond-birigui">...</div>
-                    </div>
-                    <div class="weather-card">
-                        <div class="weather-city-name">ADAMANTINA</div>
-                        <div class="weather-temperature" id="temp-adamantina">--°</div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="reload-btn" onclick="forceRefreshWeather()" title="Atualizar dados de clima" style="align-self: flex-end; margin-bottom: 5px;">
+                        🔄 CLIMA
+                    </button>
+                    <div class="weather-container">
+                        <div class="weather-card">
+                            <div class="weather-city-name">BIRIGUI</div>
+                            <div class="weather-temperature" id="temp-birigui">--°</div>
+                            <div class="weather-condition" id="cond-birigui">...</div>
+                        </div>
+                        <div class="weather-card">
+                            <div class="weather-city-name">ADAMANTINA</div>
+                            <div class="weather-temperature" id="temp-adamantina">--°</div>
                         <div class="weather-condition" id="cond-adamantina">...</div>
                     </div>
                     <div class="weather-card">
@@ -930,9 +969,14 @@
         </div>
 
         <!-- COMPANY BUTTONS -->
-        <div class="glass-card">
-            <div class="section-title">
-                🌐 ATALHOS & PERFIS
+        <div class="glass-card" style="margin-top: 30px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                <div class="section-title" style="margin-bottom: 0;">
+                    🌐 ATALHOS & PERFIS
+                </div>
+                <button class="reload-btn" onclick="openModal()" title="Adicionar novo atalho" style="margin-left: auto;">
+                    ➕ ADD
+                </button>
             </div>
             <div class="companies-grid" id="shortcutsGrid">
                 <!-- Javascript will populate this -->
@@ -941,8 +985,13 @@
 
         <!-- AI TOOLS -->
         <div class="glass-card">
-            <div class="section-title">
-                🤖 FERRAMENTAS DE IA
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                <div class="section-title" style="margin-bottom: 0;">
+                    🤖 FERRAMENTAS DE IA
+                </div>
+                <button class="reload-btn" onclick="openToolModal()" title="Adicionar nova ferramenta" style="margin-left: auto;">
+                    ➕ ADD
+                </button>
             </div>
             <div class="companies-grid" id="toolsGrid">
                 <!-- Javascript will populate this -->
@@ -951,8 +1000,11 @@
 
         <!-- HARDWARE MONITOR -->
         <div class="glass-card">
-            <div class="section-title">
-                🖥️ SISTEMA
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                <div class="section-title" style="margin-bottom: 0;">
+                    🖥️ SISTEMA
+                </div>
+         
             </div>
             <div class="hardware-grid">
                 <!-- CPU -->
@@ -1238,6 +1290,27 @@
             }
         }
 
+        async function forceRefreshWeather() {
+            const btn = event?.target.closest('.reload-btn') || document.querySelector('.reload-btn');
+            if (btn) {
+                // btn.classList.add('loading');
+                btn.disabled = true;
+            }
+            
+            try {
+                await fetchWeather();
+                notify('✅ Clima atualizado!');
+            } catch (error) {
+                console.error('Erro ao atualizar clima:', error);
+                notify('❌ Erro ao atualizar clima');
+            } finally {
+                if (btn) {
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                }
+            }
+        }
+
         // ============= HARDWARE MONITOR =============
         async function updateHardware() {
             try {
@@ -1380,6 +1453,28 @@
             else el.className = 'metric-value';
         }
 
+        async function forceRefreshHardware() {
+            const btn = event?.target.closest('.reload-btn') || document.querySelector('.reload-btn');
+            if (btn) {
+                btn.classList.add('loading');
+                btn.disabled = true;
+            }
+            
+            try {
+                // Aguarda a atualização de hardware
+                await updateHardware();
+                notify('✅ Hardware atualizado!');
+            } catch (error) {
+                console.error('Erro ao atualizar hardware:', error);
+                notify('❌ Erro ao atualizar hardware');
+            } finally {
+                if (btn) {
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                }
+            }
+        }
+
         function showCpuAlert() { document.getElementById('cpuAlert').classList.add('show'); }
         function closeCpuAlert() { document.getElementById('cpuAlert').classList.remove('show'); }
 
@@ -1400,7 +1495,10 @@
 
             currentShortcuts = await window.electronAPI.getShortcuts();
             
-            currentShortcuts.forEach(s => {
+            // Filtrar agenda e meet da exibição na grid
+            const displayedShortcuts = currentShortcuts.filter(s => s.id !== 'agenda' && s.id !== 'meet');
+            
+            displayedShortcuts.forEach(s => {
                 const btn = document.createElement('a');
                 btn.className = 'company-btn';
                 btn.href = '#';
@@ -1415,17 +1513,6 @@
                 `;
                 grid.appendChild(btn);
             });
-
-            // Add "New" Button
-            const addBtn = document.createElement('a');
-            addBtn.className = 'company-btn add-btn';
-            addBtn.href = '#';
-            addBtn.onclick = (e) => { e.preventDefault(); openModal(); };
-            addBtn.innerHTML = `
-                <div class="company-icon" style="margin-bottom: 5px">➕</div>
-                <div class="company-name">NOVO</div>
-            `;
-            grid.appendChild(addBtn);
         }
 
         async function runShortcut(shortcut) {
@@ -1509,17 +1596,6 @@
                 `;
                 grid.appendChild(btn);
             });
-
-             // Add "New Tool" Button
-            const addBtn = document.createElement('a');
-            addBtn.className = 'company-btn add-btn';
-            addBtn.href = '#';
-            addBtn.onclick = (e) => { e.preventDefault(); openToolModal(); };
-            addBtn.innerHTML = `
-                <div class="company-icon" style="margin-bottom: 5px">➕</div>
-                <div class="company-name">NOVA</div>
-            `;
-            grid.appendChild(addBtn);
         }
 
         async function runTool(tool) {
@@ -1656,6 +1732,36 @@
         async function lockWindows() {
             await window.electronAPI.lockSystem();
             notify('🔒 Sistema Bloqueado');
+        }
+
+        async function openQuickTool(shortcutId) {
+            try {
+                console.log('Opening quick tool:', shortcutId);
+                const shortcuts = await window.electronAPI.getShortcuts();
+                console.log('Shortcuts loaded:', shortcuts);
+                let shortcut = shortcuts.find(s => s.id === shortcutId);
+                console.log('Found shortcut:', shortcut);
+                
+                // Fallback para atalhos padrão caso não existam no arquivo salvo
+                if (!shortcut) {
+                    const defaultQuickTools = {
+                        'agenda': { id: 'agenda', name: 'Agenda', type: 'chrome', value: 'Default', url: 'https://calendar.google.com' },
+                        'meet': { id: 'meet', name: 'Meet', type: 'chrome', value: 'Default', url: 'https://meet.google.com' }
+                    };
+                    shortcut = defaultQuickTools[shortcutId];
+                    console.log('Using default shortcut:', shortcut);
+                }
+                
+                if (shortcut) {
+                    await window.electronAPI.runShortcut(shortcut);
+                } else {
+                    console.warn('Shortcut not found:', shortcutId);
+                    notify('Atalho não encontrado: ' + shortcutId);
+                }
+            } catch (error) {
+                console.error('Error opening quick tool:', error);
+                notify('Erro ao abrir: ' + error.message);
+            }
         }
 
         function notify(message) {

@@ -40,7 +40,6 @@
   "author": "Cockpit Team",
   "license": "ISC",
   "dependencies": {
-    "electron-edge-js": "^39.0.1",
     "os-utils": "^0.0.14",
     "systeminformation": "^5.21.22",
     "wmic": "^1.1.1"

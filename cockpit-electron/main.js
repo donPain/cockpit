@@ -12,18 +12,20 @@ const toolsPath = path.join(userDataPath, 'tools.json');
 
 // Default Profiles (moved to initial config generation)
 const DEFAULT_SHORTCUTS = [
-    { id: 'stg-br', name: 'STG - BR', desc: 'Brasil', icon: 'https://stg-outdoor.com/img/stg-logo-branco.png', type: 'chrome', value: 'Profile 5' },
+    { id: 'stg-br', name: 'STG - BR', desc: 'Brasil', icon: './assets/icons/stg-logo.png', type: 'chrome', value: 'Profile 5' },
     { id: 'sandro', name: 'SANDRO', desc: 'Master', icon: '👑', type: 'chrome', value: 'Default' },
-    { id: 'propoint', name: 'PROPOINT', desc: 'Treinamento', icon: 'https://www.propoint.com.br/logo_propoint.png', type: 'chrome', value: 'Profile 1' },
-    { id: 'ludus', name: 'LUDUS', desc: 'Security', icon: 'https://ludus.vision/logoludus600x175.png', type: 'chrome', value: 'Profile 2' },
-    { id: 'strike', name: 'STRIKE', desc: 'Coded', icon: 'https://www.scb.center/_next/image?url=%2Flogo3.png&w=640&q=75', type: 'chrome', value: 'Profile 6' },
-    { id: 'stg-us', name: 'STG - US', desc: 'United States', icon: 'https://stg-outdoor.com/img/stg-logo-branco.png', type: 'chrome', value: 'Profile 4' }
+    { id: 'propoint', name: 'PROPOINT', desc: 'Treinamento', icon: './assets/icons/propoint-logo.png', type: 'chrome', value: 'Profile 1' },
+    { id: 'ludus', name: 'LUDUS', desc: 'Security', icon: './assets/icons/ludus-logo.png', type: 'chrome', value: 'Profile 2' },
+    { id: 'strike', name: 'STRIKE', desc: 'Coded', icon: './assets/icons/strike-logo.png', type: 'chrome', value: 'Profile 6' },
+    { id: 'stg-us', name: 'STG - US', desc: 'United States', icon: './assets/icons/stg-logo.png', type: 'chrome', value: 'Profile 4' },
+    { id: 'agenda', name: 'Agenda', desc: 'Google Calendar', icon: '📅', type: 'chrome', value: 'Default', url: 'https://calendar.google.com' },
+    { id: 'meet', name: 'Meet', desc: 'Google Meet', icon: '📹', type: 'chrome', value: 'Default', url: 'https://meet.google.com' }
 ];
 
 const DEFAULT_TOOLS = [
-    { id: 'chatgpt', name: 'ChatGPT', url: 'https://chat.openai.com', icon: 'https://cdn-icons-png.flaticon.com/512/11865/11865338.png', profile: 'Default' },
-    { id: 'gemini', name: 'Gemini', url: 'https://gemini.google.com', icon: 'https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/gemini-color.png', profile: 'Default' },
-    { id: 'claude', name: 'Claude', url: 'https://claude.ai', icon: 'https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/claude-color.png', profile: 'Default' }
+    { id: 'chatgpt', name: 'ChatGPT', url: 'https://chat.openai.com', icon: './assets/icons/chatgpt-icon.png', profile: 'Default' },
+    { id: 'gemini', name: 'Gemini', url: 'https://gemini.google.com', icon: './assets/icons/gemini-icon.png', profile: 'Default' },
+    { id: 'claude', name: 'Claude', url: 'https://claude.ai', icon: './assets/icons/claude-icon.png', profile: 'Default' }
 ];
 
 function loadShortcuts() {
@@ -36,7 +38,27 @@ function loadShortcuts() {
             fs.writeFileSync(shortcutsPath, JSON.stringify(DEFAULT_SHORTCUTS, null, 2));
             return DEFAULT_SHORTCUTS;
         }
-        return JSON.parse(fs.readFileSync(shortcutsPath, 'utf8'));
+        let shortcuts = JSON.parse(fs.readFileSync(shortcutsPath, 'utf8'));
+        
+        // Garantir que atalhos essenciais existam (agenda e meet)
+        const essentialShortcuts = [
+            { id: 'agenda', name: 'Agenda', desc: 'Google Calendar', icon: '📅', type: 'chrome', value: 'Default', url: 'https://calendar.google.com' },
+            { id: 'meet', name: 'Meet', desc: 'Google Meet', icon: '📹', type: 'chrome', value: 'Default', url: 'https://meet.google.com' }
+        ];
+        
+        let updated = false;
+        for (const essential of essentialShortcuts) {
+            if (!shortcuts.find(s => s.id === essential.id)) {
+                shortcuts.push(essential);
+                updated = true;
+            }
+        }
+        
+        if (updated) {
+            saveShortcuts(shortcuts);
+        }
+        
+        return shortcuts;
     } catch (e) {
         console.error("Error loading shortcuts:", e);
         return DEFAULT_SHORTCUTS;
@@ -326,20 +348,14 @@ ipcMain.handle('run-tool', async (event, tool) => {
     return openChromeProfile(tool.profile, tool.url);
 });
 
-ipcMain.handle('run-shortcut', async (event, shortcut) => {
+ipcMain.handle('run-shortcut', async (_event, shortcut) => {
+    console.log("Running shortcut:", shortcut);
     if (shortcut.type === 'chrome') {
         // Chrome profiles sempre abrem no Chrome
-        return openChromeProfile(shortcut.value);
+        return openChromeProfile(shortcut.value, shortcut.url);
     } else if (shortcut.type === 'url') {
-        // URLs customizadas (Meet, Agenda, etc.) abrem no app
-        // Enviar para renderer process abrir webview
-        const mainWindow = BrowserWindow.getAllWindows()[0];
-        if (mainWindow) {
-            mainWindow.webContents.send('open-webview', {
-                url: shortcut.value,
-                title: shortcut.name
-            });
-        }
+        // Abre a URL no navegador padrão do sistema
+        shell.openExternal(shortcut.value);
         return { ok: true };
     } else if (shortcut.type === 'app') {
         shell.openPath(shortcut.value);
