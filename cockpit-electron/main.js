@@ -200,9 +200,18 @@ ipcMain.handle('delete-shortcut', (event, id) => {
 
 ipcMain.handle('run-shortcut', async (event, shortcut) => {
     if (shortcut.type === 'chrome') {
+        // Chrome profiles sempre abrem no Chrome
         return openChromeProfile(shortcut.value);
     } else if (shortcut.type === 'url') {
-        shell.openExternal(shortcut.value);
+        // URLs customizadas (Meet, Agenda, etc.) abrem no app
+        // Enviar para renderer process abrir webview
+        const mainWindow = BrowserWindow.getAllWindows()[0];
+        if (mainWindow) {
+            mainWindow.webContents.send('open-webview', {
+                url: shortcut.value,
+                title: shortcut.name
+            });
+        }
         return { ok: true };
     } else if (shortcut.type === 'app') {
         shell.openPath(shortcut.value);

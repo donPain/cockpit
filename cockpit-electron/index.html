@@ -729,6 +729,82 @@
             transform: translateX(0);
         }
 
+        /* WEBVIEW STYLES */
+        .webview-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 14, 26, 0.98);
+            backdrop-filter: blur(10px);
+            display: none;
+            flex-direction: column;
+            z-index: 999;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .webview-container.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .webview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 25, 45, 0.6);
+            backdrop-filter: blur(20px);
+            border-bottom: 2px solid rgba(0, 243, 255, 0.2);
+            padding: 15px 25px;
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+        }
+
+        .webview-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--neon-blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            flex: 1;
+        }
+
+        .webview-close {
+            background: rgba(255, 46, 151, 0.1);
+            border: 2px solid var(--neon-pink);
+            color: var(--neon-pink);
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .webview-close:hover {
+            background: var(--neon-pink);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-pink);
+            transform: scale(1.1);
+        }
+
+        .webview-frame {
+            flex: 1;
+            border: none;
+            background: #fff;
+            overflow: auto;
+        }
+
         .info-box {
             background: rgba(255, 165, 0, 0.2);
             border: 2px solid var(--neon-orange);
@@ -1277,6 +1353,47 @@
             setTimeout(() => notif.classList.remove('show'), 5000);
         }
 
+        // ============= WEBVIEW MANAGER =============
+        function openWebview(url, title) {
+            const webviewContainer = document.getElementById('webview-container');
+            const webviewFrame = document.getElementById('webview-frame');
+            const closeWebviewBtn = document.getElementById('close-webview');
+            const webviewTitle = document.getElementById('webview-title');
+
+            // Limpar webview anterior
+            webviewFrame.src = '';
+
+            // Atualizar título
+            webviewTitle.textContent = title || 'Carregando...';
+
+            // Carregar nova URL
+            webviewFrame.src = url;
+
+            // Mostrar container
+            webviewContainer.classList.add('show');
+        }
+
+        function closeWebview() {
+            const webviewContainer = document.getElementById('webview-container');
+            const webviewFrame = document.getElementById('webview-frame');
+            
+            webviewFrame.src = '';
+            webviewContainer.classList.remove('show');
+        }
+
+        // Atualizar título quando página carrega
+        function setupWebviewListeners() {
+            const webviewFrame = document.getElementById('webview-frame');
+            webviewFrame.onload = function() {
+                try {
+                    const pageTitle = webviewFrame.contentDocument?.title || 'Página Carregada';
+                    document.getElementById('webview-title').textContent = pageTitle;
+                } catch (e) {
+                    // CORS ou erro de acesso
+                }
+            };
+        }
+
         // Init
         updateClock();
         setInterval(updateClock, 1000);
@@ -1288,6 +1405,27 @@
         setInterval(fetchWeather, 600000);
 
         loadShortcuts();
+        setupWebviewListeners();
+
+        // Listener para abrir webview quando solicitado do main.js
+        if (window.electronAPI && window.electronAPI.onOpenWebview) {
+            window.electronAPI.onOpenWebview((data) => {
+                openWebview(data.url, data.title);
+            });
+        }
     </script>
+
+    <!-- WEBVIEW CONTAINER -->
+    <div class="webview-container" id="webview-container">
+        <div class="webview-header">
+            <span class="webview-title" id="webview-title">Carregando...</span>
+            <button class="webview-close" id="close-webview" onclick="closeWebview()">✕</button>
+        </div>
+        <iframe 
+            id="webview-frame" 
+            class="webview-frame" 
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+        ></iframe>
+    </div>
 </body>
 </html>
